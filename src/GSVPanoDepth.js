@@ -6,40 +6,76 @@ GSVPANO.PanoDepthLoader = function (parameters) {
     var _parameters = parameters || {},
         onDepthLoad = null;
 
+    // this.load = function(panoId) {
+    //     var self = this,
+    //         url;
+
+    //     url = "http://maps.google.com/cbk?output=json&cb_client=maps_sv&v=4&dm=1&pm=1&ph=1&hl=en&panoid=" + panoId;
+
+    //     $.ajax({
+    //             url: url,
+    //             dataType: 'jsonp'
+    //         })
+    //         .done(function(data, textStatus, xhr) {
+    //             var decoded, depthMap;
+
+    //             try {
+    //                 decoded = self.decode(data.model.depth_map);
+    //                 depthMap = self.parse(decoded);
+    //             } catch(e) {
+    //                 console.error("Error loading depth map for pano " + panoId + "\n" + e.message + "\nAt " + e.filename + "(" + e.lineNumber + ")");
+    //                 depthMap = self.createEmptyDepthMap();
+    //             }
+    //             if(self.onDepthLoad) {
+    //                 self.depthMap = depthMap;
+    //                 self.onDepthLoad();
+    //             }
+    //         })
+    //         .fail(function(xhr, textStatus, errorThrown) {
+    //             console.error("Request failed: " + url + "\n" + textStatus + "\n" + errorThrown);
+    //             var depthMap = self.createEmptyDepthMap();
+    //             if(self.onDepthLoad) {
+    //                 self.depthMap = depthMap;
+    //                 self.onDepthLoad();
+    //             }
+    //         })
+    // }
     this.load = function(panoId) {
-        var self = this,
-            url;
-
-        url = "http://maps.google.com/cbk?output=json&cb_client=maps_sv&v=4&dm=1&pm=1&ph=1&hl=en&panoid=" + panoId;
-
+        var self = this;
+        var url = `https://maps.googleapis.com/maps/api/streetview/metadata?pano=${panoId}&key=AIzaSyDl-P622itJNDKC2xTIbfXiDwlGq7UURCA`;
+    
         $.ajax({
-                url: url,
-                dataType: 'jsonp'
-            })
-            .done(function(data, textStatus, xhr) {
-                var decoded, depthMap;
-
-                try {
-                    decoded = self.decode(data.model.depth_map);
-                    depthMap = self.parse(decoded);
-                } catch(e) {
-                    console.error("Error loading depth map for pano " + panoId + "\n" + e.message + "\nAt " + e.filename + "(" + e.lineNumber + ")");
-                    depthMap = self.createEmptyDepthMap();
+            url: url,
+            dataType: 'json',
+            success: function(data) {
+                if (data.status === 'OK' && data.depthMap) {
+                    var decoded, depthMap;
+    
+                    try {
+                        decoded = self.decode(data.depthMap);
+                        depthMap = self.parse(decoded);
+                    } catch (e) {
+                        console.error("Error decoding depth map for pano " + panoId + "\n" + e.message);
+                        depthMap = self.createEmptyDepthMap();
+                    }
+                    if (self.onDepthLoad) {
+                        self.depthMap = depthMap;
+                        self.onDepthLoad();
+                    }
+                } else {
+                    console.error("No depth map available for pano ID: " + panoId);
                 }
-                if(self.onDepthLoad) {
-                    self.depthMap = depthMap;
+            },
+            error: function(xhr, status, error) {
+                console.error("Failed to fetch depth map metadata. Error: " + error);
+                if (self.onDepthLoad) {
+                    self.depthMap = self.createEmptyDepthMap();
                     self.onDepthLoad();
                 }
-            })
-            .fail(function(xhr, textStatus, errorThrown) {
-                console.error("Request failed: " + url + "\n" + textStatus + "\n" + errorThrown);
-                var depthMap = self.createEmptyDepthMap();
-                if(self.onDepthLoad) {
-                    self.depthMap = depthMap;
-                    self.onDepthLoad();
-                }
-            })
-    }
+            }
+        });
+    };
+    
 
     this.decode = function(rawDepthMap) {
         var self = this,
