@@ -40,6 +40,7 @@ GSVPANO.PanoDepthLoader = function (parameters) {
     //             }
     //         })
     // }
+    
     this.load = function(panoId) {
         var self = this;
         var url = `https://maps.googleapis.com/maps/api/streetview/metadata?pano=${panoId}&key=API_KEY`;

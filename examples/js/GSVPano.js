@@ -76,7 +76,6 @@ GSVPANO.PanoLoader = function (parameters) {
         }
     };
     
-
     // this.composePanorama = function () {
     
     //     this.setProgress(0);
