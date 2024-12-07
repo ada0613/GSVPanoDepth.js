@@ -120,7 +120,7 @@ GSVPANO.PanoLoader = function (parameters) {
         const fov = 90;
     
         // Construct the URL with heading, pitch, and fov
-        const url = `https://maps.googleapis.com/maps/api/streetview?pano=${_panoId}&size=640x640&heading=${heading}&pitch=${pitch}&fov=${fov}&key=AIzaSyDl-P622itJNDKC2xTIbfXiDwlGq7UURCA`;
+        const url = `https://maps.googleapis.com/maps/api/streetview?pano=${_panoId}&size=640x640&heading=${heading}&pitch=${pitch}&fov=${fov}&key=API_KEY`;
     
         const img = new Image();
         img.crossOrigin = 'anonymous';
@@ -207,7 +207,7 @@ GSVPANO.PanoLoader = function (parameters) {
         const self = this;
     
         // Fetch panorama metadata
-        fetch(`https://maps.googleapis.com/maps/api/streetview/metadata?location=${location.lat()},${location.lng()}&key=AIzaSyDl-P622itJNDKC2xTIbfXiDwlGq7UURCA`)
+        fetch(`https://maps.googleapis.com/maps/api/streetview/metadata?location=${location.lat()},${location.lng()}&key=API_KEY`)
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'OK') {
