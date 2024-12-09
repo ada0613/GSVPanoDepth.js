@@ -5,79 +5,63 @@ GSVPANO.PanoDepthLoader = function (parameters) {
 
     var _parameters = parameters || {},
         onDepthLoad = null;
-
-    // this.load = function(panoId) {
-    //     var self = this,
-    //         url;
-
-    //     url = "http://maps.google.com/cbk?output=json&cb_client=maps_sv&v=4&dm=1&pm=1&ph=1&hl=en&panoid=" + panoId;
-
-    //     $.ajax({
-    //             url: url,
-    //             dataType: 'jsonp'
-    //         })
-    //         .done(function(data, textStatus, xhr) {
-    //             var decoded, depthMap;
-
-    //             try {
-    //                 decoded = self.decode(data.model.depth_map);
-    //                 depthMap = self.parse(decoded);
-    //             } catch(e) {
-    //                 console.error("Error loading depth map for pano " + panoId + "\n" + e.message + "\nAt " + e.filename + "(" + e.lineNumber + ")");
-    //                 depthMap = self.createEmptyDepthMap();
-    //             }
-    //             if(self.onDepthLoad) {
-    //                 self.depthMap = depthMap;
-    //                 self.onDepthLoad();
-    //             }
-    //         })
-    //         .fail(function(xhr, textStatus, errorThrown) {
-    //             console.error("Request failed: " + url + "\n" + textStatus + "\n" + errorThrown);
-    //             var depthMap = self.createEmptyDepthMap();
-    //             if(self.onDepthLoad) {
-    //                 self.depthMap = depthMap;
-    //                 self.onDepthLoad();
-    //             }
-    //         })
-    // }
     
-    this.load = function(panoId) {
-        var self = this;
-        var url = `https://maps.googleapis.com/maps/api/streetview/metadata?pano=${panoId}&key=API_KEY`;
+    this.load = function(panoId, heading = 0, pitch = 0, fov = 90, elevation = null) {
+        if (!panoId) {
+            console.error("Invalid pano ID: The pano ID is null or undefined.");
+            return;
+        }
+    
+        console.log(
+            `Loading depth map for pano ID: ${panoId} with heading: ${heading}, pitch: ${pitch}, fov: ${fov}, elevation: ${elevation !== null ? elevation + " meters" : "unavailable"}`
+        );
+        
+        // Construct the URL with heading, pitch, and fov parameters
+        const url = `https://maps.googleapis.com/maps/api/streetview/metadata?pano=${panoId}&heading=${heading}&pitch=${pitch}&fov=${fov}&key=YOUR_KEY`;
     
         $.ajax({
             url: url,
             dataType: 'json',
             success: function(data) {
-                if (data.status === 'OK' && data.depthMap) {
-                    var decoded, depthMap;
+                console.log("Street View metadata response:", data);
     
-                    try {
-                        decoded = self.decode(data.depthMap);
-                        depthMap = self.parse(decoded);
-                    } catch (e) {
-                        console.error("Error decoding depth map for pano " + panoId + "\n" + e.message);
-                        depthMap = self.createEmptyDepthMap();
-                    }
-                    if (self.onDepthLoad) {
-                        self.depthMap = depthMap;
-                        self.onDepthLoad();
+                if (data.status === 'OK') {
+                    if (data.depthMap) {
+                        try {
+                            const decoded = self.decode(data.depthMap);
+                            const depthMap = self.parse(decoded);
+                            if (self.onDepthLoad) {
+                                self.depthMap = depthMap;
+                                self.onDepthLoad();
+                            }
+                        } catch (e) {
+                            console.error(`Error decoding depth map for pano ID: ${panoId}.`, e);
+                            if (self.onDepthLoad) {
+                                self.depthMap = self.createEmptyDepthMap();
+                                self.onDepthLoad();
+                            }
+                        }
+                    } else {
+                        console.warn(`No depth map available for pano ID: ${panoId}.`);
+                        if (self.onDepthLoad) {
+                            self.depthMap = self.createEmptyDepthMap();
+                            self.onDepthLoad();
+                        }
                     }
                 } else {
-                    console.error("No depth map available for pano ID: " + panoId);
+                    console.error(`Pano ID is valid, but no metadata returned for pano ID: ${panoId}. Status: ${data.status}`);
                 }
             },
             error: function(xhr, status, error) {
-                console.error("Failed to fetch depth map metadata. Error: " + error);
+                console.error(`Failed to fetch metadata for pano ID: ${panoId}. Error:`, error);
                 if (self.onDepthLoad) {
                     self.depthMap = self.createEmptyDepthMap();
                     self.onDepthLoad();
                 }
             }
         });
-    };
+    };    
     
-
     this.decode = function(rawDepthMap) {
         var self = this,
                    i,
